@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WWW小剧场生成助手</title>
+    <style>
+        /* 全局样式 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* 主容器 */
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        /* 头部区域 */
+        .header {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            padding: 30px;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        /* 使用说明按钮 */
+        .help-btn {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid white;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .help-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* 使用说明模态框 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+            background: none;
+            border: none;
+        }
+
+        .modal-close:hover {
+            color: #333;
+        }
+
+        .modal h2 {
+            color: #3b82f6;
+            margin-bottom: 15px;
+        }
+
+        .modal p {
+            line-height: 1.8;
+            color: #555;
+            margin-bottom: 10px;
+        }
+
+        .modal a {
+            color: #3b82f6;
+            text-decoration: none;
+        }
+
+        .modal a:hover {
+            text-decoration: underline;
+        }
+
+        /* 工具栏 */
+        .toolbar {
+            padding: 20px 30px;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .toolbar button {
+            background: white;
+            border: 1px solid #cbd5e1;
+            color: #475569;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .toolbar button:hover {
+            background: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+
+        /* 主体内容 */
+        .content {
+            padding: 30px;
+        }
+
+        /* 表单样式 */
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: #334155;
+            margin-bottom: 8px;
+            font-size: 15px;
+        }
+
+        .required::after {
+            content: '*';
+            color: #ef4444;
+            margin-left: 4px;
+        }
+
+        .form-group input[type="text"],
+        .form-group input[type="number"],
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        .hint {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 5px;
+        }
+
+        /* 单选按钮样式 */
+        .radio-group {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .radio-group label {
+            display: flex;
+            align-items: center;
+            font-weight: normal;
+            cursor: pointer;
+        }
+
+        .radio-group input[type="radio"] {
+            margin-right: 8px;
+        }
+
+        /* 自定义字段区域 */
+        .custom-fields {
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 2px solid #e2e8f0;
+        }
+
+        .custom-field {
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            position: relative;
+        }
+
+        .custom-field-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .remove-field-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 5px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .remove-field-btn:hover {
+            background: #dc2626;
+        }
+
+        .add-field-btn {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 15px;
+        }
+
+        .add-field-btn:hover {
+            background: #059669;
+        }
+
+        /* 生成按钮 */
+        .generate-btn {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            width: 100%;
+            margin-top: 30px;
+            transition: transform 0.2s;
+        }
+
+        .generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
+        }
+
+        /* 输出文本块 */
+        .output-section {
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 2px solid #e2e8f0;
+        }
+
+        .output-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .output-header h3 {
+            color: #334155;
+        }
+
+        .copy-btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .copy-btn:hover {
+            background: #2563eb;
+        }
+
+        .output-box {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .output-box:empty::before {
+            content: '点击"一键生成"按钮生成内容...';
+            color: #64748b;
+        }
+
+        /* 提示消息 */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #10b981;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            z-index: 2000;
+            display: none;
+            animation: slideIn 0.3s;
+        }
+
+        .toast.active {
+            display: block;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .header {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 22px;
+            }
+
+            .help-btn {
+                position: static;
+                margin-top: 15px;
+                width: 100%;
+            }
+
+            .toolbar {
+                padding: 15px;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            .modal-content {
+                padding: 20px;
+            }
+        }
+
+        /* 隐藏的文件输入 */
+        #import-file {
+            display: none;
+        }
+
+        /* 随机次数输入 */
+        .repeat-count {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .repeat-count label {
+            margin: 0;
+            font-weight: normal;
+            font-size: 14px;
+        }
+
+        .repeat-count input {
+            width: 80px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 主容器 -->
+    <div class="container">
+        <!-- 头部 -->
+        <div class="header">
+            <h1>小剧场生成助手</h1>
+            <p>——作者：WWW</p>
+            <button class="help-btn" onclick="openHelp()">使用说明</button>
+        </div>
+
+        <!-- 工具栏 -->
+        <div class="toolbar">
+            <button onclick="saveConfig()">💾 保存配置</button>
+            <button onclick="exportConfig()">📤 导出配置</button>
+            <button onclick="document.getElementById('import-file').click()">📥 导入配置</button>
+            <input type="file" id="import-file" accept=".json" onchange="importConfig(event)">
+        </div>
+
+        <!-- 主体内容 -->
+        <div class="content">
+            <form id="main-form">
+                <!-- 1. 标题 -->
+                <div class="form-group">
+                    <label class="required">小剧场标题</label>
+                    <input type="text" id="title" value="AU" required>
+                </div>
+
+                <!-- 2. 使用模式 -->
+                <div class="form-group">
+                    <label class="required">使用模式</label>
+                    <div class="radio-group">
+                        <label>
+                            <input type="radio" name="mode" value="independent" checked>
+                            独立使用
+                        </label>
+                        <label>
+                            <input type="radio" name="mode" value="worldbook">
+                            作为小剧场世界书条目使用
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 3. 生成要求 -->
+                <div class="form-group">
+                    <label class="required">生成要求</label>
+                    <textarea id="requirements" required>- 故事中的角色更换至其他世界观,生成一段完整的小故事,以主要角色间的对话和互动为核心,展现角色之间的情感关系,内容足够新颖吸引人。
+- 角色自动适配为该世界观下合适的身份,不得更改为该世界观下已存在的角色。例如,如果世界观是圣杯战争,不得将{{user}}设定为卫宫切嗣,而是要设定为该世界观下名为{{user}}的新角色。
+- 可根据需要补充背景板NPC参与剧情,但不能着墨太多,只能作为主要角色的衬托。</textarea>
+                </div>
+
+                <!-- 4. 故事背景 -->
+                <div class="form-group">
+                    <label>故事背景</label>
+                    <textarea id="background">自由发挥,
+角色们均为这个世界的原住民,
+角色们均为刚刚穿越来到这个世界的,
+角色们均为穿越来到这个世界的，已经穿越很久了,
+{{user}}带着快穿系统穿越到这个世界，而{{char}}是这个世界的原住民，{{user}}的任务是攻略{{char}},
+{{char}}带着快穿系统穿越到这个世界，而{{user}}是这个世界的原住民，{{char}}的任务是攻略{{user}},
+角色们带着快穿系统穿越到这个世界，有着一个特定的任务要完成,
+角色们被迫穿越到这个世界，要完成一个特定的任务才能回到原世界,
+角色们带着前世（主线）的记忆投胎到这个世界,
+角色们投胎到这个世界，但是丢失了前世（主线）的记忆,
+角色们带着前世（主线）的记忆在这个世界轮回,
+角色们所在的这个世界实际上是虚拟世界，TA们不知道自己身在虚拟世界中，而上位世界有一些观众在围观他们的生活直播,
+角色们所在的这个世界实际上是虚拟世界，TA们知道自己身在虚拟世界中，而上位世界有一些观众在围观他们的生活直播，TA们需要满足观众的一些要求,
+{{char}}是{{user}}前世（主线剧情）的恋人，但是{{user}}已经忘了{{char}},
+{{user}}是{{char}}前世（主线剧情）的恋人，但是{{char}}已经忘了{{user}},
+{{char}}和{{user}}是前世（主线剧情）的恋人，但是TA们已经忘了彼此,
+{{char}}被困在了这个世界里，而{{user}}是来救TA出去的,
+{{user}}被困在了这个世界里，而{{char}}是来救TA出去的
+</textarea>
+                    <div class="hint">当需要在多个背景中随机选择一个时,请用英文逗号分隔</div>
+                </div>
+
+                <!-- 5. 文风要求 -->
+                <div class="form-group">
+                    <label>文风要求</label>
+                    <textarea id="style">正剧,
+史诗感,
+轻松诙谐吐槽,
+搞笑撕逼,
+虐向,
+纯爱煽情,
+NSFW</textarea>
+                    <div class="hint">当需要在多个文风中随机选择一个时,请用英文逗号分隔</div>
+                </div>
+
+                <!-- 6. 世界观&题材要求 -->
+                <div class="form-group">
+                    <label class="required">世界观/题材要求</label>
+                    <div class="radio-group">
+                        <label>
+                            <input type="radio" name="worldview" value="consistent" onchange="toggleWorldviewInput()">
+                            和主线一致
+                        </label>
+                        <label>
+                            <input type="radio" name="worldview" value="custom" checked onchange="toggleWorldviewInput()">
+                            自定义
+                        </label>
+                    </div>
+                    <textarea id="worldview-custom" style="margin-top: 10px;">自由指定一个AU,自由指定一个游戏AU,自由指定一个现实作品的AU,
+虫族（社会结构包含虫母、雄虫、亚雌，虫母为尊）,虫族（社会结构包含雄虫、雌虫、亚雌，雄虫为尊，雌虫大部分为军雌）,哨兵向导,ABO,dom/sub,兽人,
+龙傲天文学,狗血小言文,恋爱少女漫,热血少年漫,晋江文学,海棠文学,
+克苏鲁,血族,圣杯战争,魔法少女小圆,EVA,霍格沃兹,超级英雄,盗墓笔记,黑塔利亚,JOJO的奇妙冒险（可以作为替身使者或替身）,西游记,
+赛博朋克2077,底特律变人,阴阳师手游,剑网三,
+西幻,DND,
+蒸汽朋克,赛博朋克,恐怖怪谈,规则怪谈,星际,星际机甲,星球大战,无限恐怖,无限流,
+近未来,科幻,末世废土,后启示录,末日将至,末世种田,末世异能,
+架空历史,中国古代,春秋战国,秦朝,三国,唐朝,宋朝,明朝,清朝,民国,革命年代,知青下乡,
+日本平安时代,日本江户时代,日本大正时代,
+欧洲中世纪,欧洲文艺复兴时期,欧洲近代,
+一战,二战,战争年代,第三次世界大战,
+武侠,武侠（金庸作品）,中式玄幻,仙侠修真,中式妖神,
+架空神话,希腊神话,希伯来神话,印度神话,埃及神话,中国洪荒神话,中国神话,日本妖神,
+工地情缘(TA们是工友),青春校园,娱乐圈（综艺/团综出道/演员）,小妈文学,黑帮,警匪（猫鼠游戏）,推理破案</textarea>
+                    <div class="hint">当需要在多个世界观/题材中随机选择一个时,请用英文逗号分隔</div>
+                </div>
+
+                <!-- 7. 篇幅要求 -->
+                <div class="form-group">
+                    <label class="required">篇幅要求</label>
+                    <input type="number" id="length" value="2000" min="1" required>
+                </div>
+
+                <!-- 8. 体裁要求 -->
+                <div class="form-group">
+                    <label>体裁要求</label>
+                    <textarea id="genre">自由发挥,诗歌,戏剧,电影分镜,小说,视觉小说,论文,研究报告,散文,杂文,日记,回忆录,人物档案,论坛帖子,个人主页,语录,箴言,摘抄,新闻报道,简报,公告,日志,笔记,归档记录,朋友圈,回忆相册</textarea>
+                    <div class="hint">当需要在多个体裁中随机选择一个时,请用英文逗号分隔</div>
+                </div>
+
+                <!-- 9. 元素要求 -->
+                <div class="form-group">
+                    <label>元素要求</label>
+                    <textarea id="elements">自由发挥，越狗血越恶俗越好,里番经典剧情,霸总文学经典剧情,言情经典剧情,玛丽苏文学经典剧情,龙傲天文学经典剧情,迪化流经典剧情,小妈文学,先婚后爱,婚礼当天抢婚,赛博忏悔室,社死现场,宫廷权谋,囚禁play,网恋奔现,私奔</textarea>
+                    <div class="hint">当需要在多个元素中随机选择一个时,请用英文逗号分隔。“个数”用于指定需要选择的随机元素个数。例如，如果把“个数”设置成3，则会在元素列表里进行三次抽取。</div>
+                    <div class="repeat-count">
+                        <label>抽取次数:</label>
+                        <input type="number" id="elements-repeat" value="1" min="1" max="99">
+                    </div>
+                </div>
+
+                <!-- 自定义字段区域 -->
+                <div class="custom-fields">
+                    <h3 style="margin-bottom: 20px; color: #334155;">自定义字段</h3>
+                    <div id="custom-fields-container"></div>
+                    <button type="button" class="add-field-btn" onclick="addCustomField()">➕ 添加自定义字段</button>
+                </div>
+
+                <!-- 生成按钮 -->
+                <button type="button" class="generate-btn" onclick="generateOutput()">🎭 一键生成</button>
+            </form>
+
+            <!-- 输出文本块 -->
+            <div class="output-section">
+                <div class="output-header">
+                    <h3>生成结果</h3>
+                    <button class="copy-btn" onclick="copyOutput()">📋 复制</button>
+                </div>
+                <div class="output-box" id="output"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 使用说明模态框 -->
+    <div class="modal" id="help-modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeHelp()">✕</button>
+            <h2>使用说明</h2>
+            <p>本工具可以生成格式化的小剧场,并可通过酒馆提供的宏{{random:...}}来进行随机选项选择，提升生成多样性。还支持添加自定义字段，填写你想要实现的要求。在发送到酒馆聊天里时，{{random:...}}内的选项只会有一个被随机选择显示出来，不会都发送给AI。</p>
+            <p>点击上方“保存配置”按钮可以保存配置。点击“导入/导出配置”可以将配置文件以JSON格式导入/导出，方便分享。</p>
+            <p>更新链接: <a href="https://discord.com/channels/1291925535324110879/1421177491959316570/1421177491959316570" target="_blank">Discord更新链接</a>。同时我也在写一系列小剧场和小工具，欢迎体验和repo~~有好饭能让我也吃一吃吗🥹</p>
+        </div>
+    </div>
+
+    <!-- 提示消息 -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // 自定义字段计数器
+        let customFieldCounter = 0;
+
+        // 页面加载时加载保存的配置
+        window.onload = function() {
+            loadConfig();
+        };
+
+        // 打开使用说明
+        function openHelp() {
+            document.getElementById('help-modal').classList.add('active');
+        }
+
+        // 关闭使用说明
+        function closeHelp() {
+            document.getElementById('help-modal').classList.remove('active');
+        }
+
+        // 点击模态框外部关闭
+        document.getElementById('help-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeHelp();
+            }
+        });
+
+        // 切换世界观输入框
+        function toggleWorldviewInput() {
+            const customRadio = document.querySelector('input[name="worldview"][value="custom"]');
+            const customTextarea = document.getElementById('worldview-custom');
+            customTextarea.disabled = !customRadio.checked;
+            customTextarea.style.display = customRadio.checked ? 'block' : 'none';
+        }
+
+        // 添加自定义字段
+        function addCustomField() {
+            customFieldCounter++;
+            const container = document.getElementById('custom-fields-container');
+            const fieldId = 'custom-field-' + customFieldCounter;
+            
+            const fieldHtml = `
+                <div class="custom-field" id="${fieldId}">
+                    <div class="custom-field-header">
+                        <h4>自定义字段 #${customFieldCounter}</h4>
+                        <button type="button" class="remove-field-btn" onclick="removeCustomField('${fieldId}')">删除</button>
+                    </div>
+                    <div class="form-group">
+                        <label>字段名称</label>
+                        <input type="text" class="field-name" placeholder="例如:角色关系、">
+                    </div>
+                    <div class="form-group">
+                        <label>字段类型</label>
+                        <select class="field-type" onchange="updateFieldInput(this, '${fieldId}')">
+                            <option value="text">常驻字段</option>
+                            <option value="random">随机字段</option>
+                        </select>
+                    </div>
+                    <div class="form-group field-input-container">
+                        <label>字段内容</label>
+                        <textarea class="field-content" placeholder="请输入内容"></textarea>
+                        <div class="hint">当需要在多个选项中随机选择一个时,请选择随机字段，并用英文逗号分隔不同选项。</div>
+                    </div>
+                    <div class="repeat-count" style="display: none;">
+                        <label>抽取次数:</label>
+                        <input type="number" class="field-repeat" value="1" min="1" max="99">
+                    </div>
+                </div>
+            `;
+            
+            container.insertAdjacentHTML('beforeend', fieldHtml);
+        }
+
+        // 删除自定义字段
+        function removeCustomField(fieldId) {
+            document.getElementById(fieldId).remove();
+        }
+
+        // 更新字段输入方式
+        function updateFieldInput(select, fieldId) {
+            const field = document.getElementById(fieldId);
+            const repeatCountDiv = field.querySelector('.repeat-count');
+            
+            if (select.value === 'random') {
+                repeatCountDiv.style.display = 'flex';
+            } else {
+                repeatCountDiv.style.display = 'none';
+            }
+        }
+
+        // 生成输出内容
+        function generateOutput() {
+            let output = '';
+            
+            // 获取表单值
+            const title = document.getElementById('title').value.trim();
+            const mode = document.querySelector('input[name="mode"]:checked').value;
+            const requirements = document.getElementById('requirements').value.trim();
+            const background = document.getElementById('background').value.trim();
+            const style = document.getElementById('style').value.trim();
+            const worldviewMode = document.querySelector('input[name="worldview"]:checked').value;
+            const worldviewCustom = document.getElementById('worldview-custom').value.trim();
+            const length = document.getElementById('length').value;
+            const genre = document.getElementById('genre').value.trim();
+            const elements = document.getElementById('elements').value.trim();
+            const elementsRepeat = parseInt(document.getElementById('elements-repeat').value);
+
+            // 根据使用模式添加开始标签
+            if (mode === 'worldbook') {
+                output += '<little-play>\n';
+            }
+
+            // 标题
+            output += `【小剧场·${title}】\n整体要求:\n`;
+
+            // 使用模式
+            if (mode === 'independent') {
+                output += '- 本次回复需暂停一切正文输出,立刻输出本剧场内容。\n';
+            }
+
+            // 生成要求
+            if (requirements) {
+                output += requirements + '\n';
+            }
+
+            // 固定要求
+            output += '- 小剧场标题需根据内容动态生成。\n';
+            output += '- 剧情必须完整,从开头到结尾,不能仅是剧情片段。\n';
+
+            // 故事背景
+            if (background) {
+                output += `- 故事背景: {{random:${background}}}\n`;
+            }
+
+            // 文风要求
+            if (style) {
+                output += `- 文风: {{random:${style}}}\n`;
+            }
+
+            // 世界观&题材
+            if (worldviewMode === 'consistent') {
+                output += '- 剧场内容根据主线剧情和当前世界观动态适配。\n';
+            } else if (worldviewCustom) {
+                output += `- 世界观/题材: {{random:${worldviewCustom}}}\n`;
+            }
+
+            // 篇幅要求
+            if (length) {
+                output += `- 篇幅: ≥${length}字\n`;
+            }
+
+            // 体裁要求
+            if (genre) {
+                output += `- 体裁: {{random:${genre}}}\n`;
+            }
+
+            // 元素要求
+            if (elements) {
+                output += '- 元素要求: ';
+                const elementParts = [];
+                for (let i = 0; i < elementsRepeat; i++) {
+                    elementParts.push(`{{random:${elements}}}`);
+                }
+                output += elementParts.join(';') + '\n';
+            }
+
+            // 自定义字段
+            const customFields = document.querySelectorAll('.custom-field');
+            customFields.forEach(field => {
+                const name = field.querySelector('.field-name').value.trim();
+                const type = field.querySelector('.field-type').value;
+                const content = field.querySelector('.field-content').value.trim();
+                const repeat = parseInt(field.querySelector('.field-repeat').value);
+
+                if (name && content) {
+                    if (type === 'random') {
+                        output += `- ${name}: `;
+                        const parts = [];
+                        for (let i = 0; i < repeat; i++) {
+                            parts.push(`{{random:${content}}}`);
+                        }
+                        output += parts.join(';') + '\n';
+                    } else {
+                        output += `- ${name}: ${content}\n`;
+                    }
+                }
+            });
+
+            // 根据使用模式添加结束标签
+            if (mode === 'worldbook') {
+                output += '</little-play>';
+            }
+
+            // 显示输出
+            document.getElementById('output').textContent = output;
+        }
+
+        // 复制输出内容
+        function copyOutput() {
+            const output = document.getElementById('output').textContent;
+            if (!output || output === '点击"一键生成"按钮生成内容...') {
+                showToast('请先点击按钮来生成内容!', 'error');
+                return;
+            }
+
+            navigator.clipboard.writeText(output).then(() => {
+                showToast('复制成功!');
+            }).catch(() => {
+                showToast('复制失败,请手动复制', 'error');
+            });
+        }
+
+        // 显示提示消息
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.style.background = type === 'success' ? '#10b981' : '#ef4444';
+            toast.classList.add('active');
+            
+            setTimeout(() => {
+                toast.classList.remove('active');
+            }, 3000);
+        }
+
+        // 保存配置
+        function saveConfig() {
+            const config = collectConfig();
+            try {
+                localStorage.setItem('theaterGeneratorConfig', JSON.stringify(config));
+                showToast('配置保存成功!');
+            } catch (e) {
+                showToast('保存失败', 'error');
+            }
+        }
+
+        // 加载配置
+        function loadConfig() {
+            try {
+                const saved = localStorage.getItem('theaterGeneratorConfig');
+                if (saved) {
+                    const config = JSON.parse(saved);
+                    applyConfig(config);
+                }
+            } catch (e) {
+                console.error('加载配置失败', e);
+            }
+        }
+
+        // 收集当前配置
+        function collectConfig() {
+            const config = {
+                title: document.getElementById('title').value,
+                mode: document.querySelector('input[name="mode"]:checked').value,
+                requirements: document.getElementById('requirements').value,
+                background: document.getElementById('background').value,
+                style: document.getElementById('style').value,
+                worldviewMode: document.querySelector('input[name="worldview"]:checked').value,
+                worldviewCustom: document.getElementById('worldview-custom').value,
+                length: document.getElementById('length').value,
+                genre: document.getElementById('genre').value,
+                elements: document.getElementById('elements').value,
+                elementsRepeat: document.getElementById('elements-repeat').value,
+                customFields: []
+            };
+
+            // 收集自定义字段
+            const customFields = document.querySelectorAll('.custom-field');
+            customFields.forEach(field => {
+                config.customFields.push({
+                    name: field.querySelector('.field-name').value,
+                    type: field.querySelector('.field-type').value,
+                    content: field.querySelector('.field-content').value,
+                    repeat: field.querySelector('.field-repeat').value
+                });
+            });
+
+            return config;
+        }
+
+        // 应用配置
+        function applyConfig(config) {
+            document.getElementById('title').value = config.title || '番外';
+            document.querySelector(`input[name="mode"][value="${config.mode}"]`).checked = true;
+            document.getElementById('requirements').value = config.requirements || '';
+            document.getElementById('background').value = config.background || '';
+            document.getElementById('style').value = config.style || '';
+            document.querySelector(`input[name="worldview"][value="${config.worldviewMode}"]`).checked = true;
+            document.getElementById('worldview-custom').value = config.worldviewCustom || '';
+            toggleWorldviewInput();
+            document.getElementById('length').value = config.length || '2000';
+            document.getElementById('genre').value = config.genre || '';
+            document.getElementById('elements').value = config.elements || '';
+            document.getElementById('elements-repeat').value = config.elementsRepeat || '1';
+
+            // 清空并重建自定义字段
+            document.getElementById('custom-fields-container').innerHTML = '';
+            customFieldCounter = 0;
+            
+            if (config.customFields && config.customFields.length > 0) {
+                config.customFields.forEach(field => {
+                    addCustomField();
+                    const fieldElement = document.getElementById('custom-field-' + customFieldCounter);
+                    fieldElement.querySelector('.field-name').value = field.name;
+                    fieldElement.querySelector('.field-type').value = field.type;
+                    fieldElement.querySelector('.field-content').value = field.content;
+                    fieldElement.querySelector('.field-repeat').value = field.repeat;
+                    updateFieldInput(fieldElement.querySelector('.field-type'), 'custom-field-' + customFieldCounter);
+                });
+            }
+        }
+
+        // 导出配置
+        function exportConfig() {
+            const config = collectConfig();
+            const dataStr = JSON.stringify(config, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = '小剧场配置_' + new Date().getTime() + '.json';
+            link.click();
+            URL.revokeObjectURL(url);
+            showToast('配置导出成功!');
+        }
+
+        // 导入配置
+        function importConfig(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const config = JSON.parse(e.target.result);
+                    applyConfig(config);
+                    showToast('配置导入成功!');
+                } catch (error) {
+                    showToast('导入失败,文件格式错误', 'error');
+                }
+            };
+            reader.readAsText(file);
+            
+            // 重置文件输入,允许重复导入同一文件
+            event.target.value = '';
+        }
+    </script>
+</body>
+</html>
